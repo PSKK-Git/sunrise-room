@@ -1,0 +1,6 @@
+memory.db
+.venv/
+.DS_Store
+.scribe_state.json
+__pycache__/
+.pytest_cache/

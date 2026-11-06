@@ -1,0 +1,27 @@
+{
+  "shop": "Sunrise Laundromat",
+  "owner": "Owner",
+  "staff": ["Ravi", "Meena"],
+  "machines": [
+    {"id": 1, "kind": "washer", "capacity_kg": 8,  "status": "ok",       "notes": ""},
+    {"id": 2, "kind": "washer", "capacity_kg": 8,  "status": "ok",       "notes": ""},
+    {"id": 3, "kind": "washer", "capacity_kg": 12, "status": "fault",    "notes": "E21 on display, stopped mid-cycle with customer clothes inside"},
+    {"id": 4, "kind": "dryer",  "capacity_kg": 10, "status": "ok",       "notes": ""},
+    {"id": 5, "kind": "dryer",  "capacity_kg": 10, "status": "ok",       "notes": ""}
+  ],
+  "stock": [
+    {"item": "detergent_5l", "qty": 2,  "reorder_at": 4,  "supplier": "CleanCo", "delivery_day": "Tuesday", "unit_price": 640},
+    {"item": "softener_5l",  "qty": 6,  "reorder_at": 3,  "supplier": "CleanCo", "delivery_day": "Tuesday", "unit_price": 520},
+    {"item": "laundry_bags", "qty": 40, "reorder_at": 20, "supplier": "PackIt",  "delivery_day": "Friday",  "unit_price": 12}
+  ],
+  "customers": [
+    {"id": "C101", "name": "Anita Rao",  "phone_last4": "4821", "orders": 14},
+    {"id": "C102", "name": "Vikram S",   "phone_last4": "9034", "orders": 3}
+  ],
+  "orders": [
+    {"id": "O5001", "customer": "C101", "machine": 3, "amount": 180, "status": "in_progress", "items": "bedsheets x2, towels x4"},
+    {"id": "O5002", "customer": "C102", "machine": 1, "amount": 90,  "status": "done",        "items": "jeans x3"}
+  ],
+  "pending": [],
+  "log": []
+}
