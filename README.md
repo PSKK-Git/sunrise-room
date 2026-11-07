@@ -2,6 +2,8 @@
 
 *Flip the Switch hackathon entry. Track 1 (Best Business Workflow); also eligible for Best Blog.*
 
+**Blog:** https://dev.to/chaddler/the-washing-machine-ate-a-customers-bedsheets-and-the-owner-was-at-a-wedding-h91 · **Demo video:** *(YouTube link)* · **Code:** this repo
+
 A small laundromat has two staff and an owner who is not always at the counter. When a washer dies with a customer's clothes inside, three things have to happen fast: someone works out what is wrong, someone decides whether to refund, and someone remembers what happened last time. Today that lives in WhatsApp threads and in the owner's head.
 
 Sunrise Room puts all of it in one Switch room. Staff post in chat, AI agents investigate, **nothing that costs money happens until the owner approves**, and a memory agent, the **scribe**, remembers every decision so the next incident starts from what the shop already knows.
