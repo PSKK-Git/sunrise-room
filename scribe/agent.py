@@ -72,7 +72,8 @@ class Scribe:
         if msg is not None and msg.sender.lower() not in self.self_names:  # never answer ourselves
             with self._lock:  # the ledger is shared between worker threads
                 reply = handle(self.ledger, msg.sender, msg.content, msg_id=msg.message_id, bot_names=self.bot_names)
-            self.post(msg.room_id, reply)
+            if reply:  # empty means "not for me": say nothing
+                self.post(msg.room_id, reply)
         self._advance(seq)
         return None
 
@@ -110,14 +111,19 @@ def register() -> None:
     data = r.json()
     state.update(agent_id=data["id"], api_key=data["api_key"], connection_id=str(uuid.uuid4()))
     _save_state(state)  # save before the next call: the key is shown only once
-    # a new agent answers only its owner; let the whole room talk to it (no connection needed)
-    httpx.post(
+    # A new agent answers only its owner. Older servers let the agent widen that itself; newer ones answer 403
+    # ("an agent can't change its own settings"), and the owner must do it in Switch Console instead.
+    r = httpx.post(
         f"{base}/agents/{state['agent_id']}/ops/update_agent_detail",
         json={"agent_id": state["agent_id"], "addressing": "anyone"},
         headers={"Authorization": f"Bearer {state['api_key']}"},
         timeout=30,
-    ).raise_for_status()
+    )
     print("Registered scribe as", state["agent_id"])
+    if r.status_code == 403:
+        print("Next: in Switch Console open Your Agents > scribe and set who can instruct it (anyone / the room).")
+    else:
+        r.raise_for_status()
 
 
 async def run() -> None:

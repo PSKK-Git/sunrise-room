@@ -135,6 +135,11 @@ def handle(ledger: Ledger, who: str, message: str, msg_id: str = "", bot_names: 
                 return "Nothing on record about that yet."
             return "Here is what we know:\n" + "\n".join("- " + render_fact(h) for h in hits)
 
+        # Only answer an unknown message that opens with the scribe's name. A mention in the middle of a sentence
+        # ("I've asked @scribe whether...") is an agent or person talking about it, not to it: stay silent.
+        opens_with_name = any(message.strip().lower().lstrip("@").startswith(n.lower()) for n in bot_names)
+        if not opens_with_name:
+            return ""
         return "I didn't catch that.\n" + HELP
     except MemoryError_ as e:
         return f"Couldn't do that: {e}"

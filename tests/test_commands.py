@@ -57,6 +57,8 @@ def test_errors_become_friendly_replies_not_exceptions(ledger):
     assert "Couldn't do that" in handle(ledger, "Ravi", "scribe blast #99")
     assert "Which entry?" in handle(ledger, "Ravi", "scribe replace please")
     assert "didn't catch" in handle(ledger, "Ravi", "scribe sing me a song")
+    # a mid-sentence mention (typical of an agent's prose) must not trigger help spam
+    assert handle(ledger, "triager", "I've asked @scribe whether we've seen this before.") == ""
 
 
 def test_empty_message_shows_help(ledger):
