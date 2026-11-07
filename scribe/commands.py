@@ -140,6 +140,11 @@ def handle(ledger: Ledger, who: str, message: str, msg_id: str = "", bot_names: 
         opens_with_name = any(message.strip().lower().lstrip("@").startswith(n.lower()) for n in bot_names)
         if not opens_with_name:
             return ""
+        # Agents ask in plain sentences ("Have we seen this before? ..."), not exact commands: treat the whole
+        # message as a memory search, and fall back to the help text only when nothing matches.
+        hits = ledger.recall(_TAG.sub("", t), tags=_TAG.findall(t), limit=5)
+        if hits:
+            return "Here is what we know:\n" + "\n".join("- " + render_fact(h) for h in hits)
         return "I didn't catch that.\n" + HELP
     except MemoryError_ as e:
         return f"Couldn't do that: {e}"

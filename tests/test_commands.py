@@ -57,6 +57,9 @@ def test_errors_become_friendly_replies_not_exceptions(ledger):
     assert "Couldn't do that" in handle(ledger, "Ravi", "scribe blast #99")
     assert "Which entry?" in handle(ledger, "Ravi", "scribe replace please")
     assert "didn't catch" in handle(ledger, "Ravi", "scribe sing me a song")
+    # a plain-English question addressed to the scribe searches memory instead of failing
+    ledger.remember("Ravi", "Washer 3 stops with error E21 when the load is over 10kg", kind="observation", tags=["washer"])
+    assert "E21" in handle(ledger, "triager", "@scribe Washer 3 stopped mid-cycle. Have we seen this before?")
     # a mid-sentence mention (typical of an agent's prose) must not trigger help spam
     assert handle(ledger, "triager", "I've asked @scribe whether we've seen this before.") == ""
 
