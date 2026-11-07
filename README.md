@@ -1,6 +1,6 @@
 # Sunrise Room: a laundromat where people and AI agents run the shop together
 
-*Flip the Switch hackathon entry. Track 1 (Best Business Workflow); also eligible for Best Blog and Code with Wispr.*
+*Flip the Switch hackathon entry. Track 1 (Best Business Workflow); also eligible for Best Blog.*
 
 A small laundromat has two staff and an owner who is not always at the counter. When a washer dies with a customer's clothes inside, three things have to happen fast: someone works out what is wrong, someone decides whether to refund, and someone remembers what happened last time. Today that lives in WhatsApp threads and in the owner's head.
 
@@ -34,7 +34,7 @@ It is a small SQLite store (`scribe/store.py`) with no services to run. The desi
 - **Seeded history.** `python -m scribe.seed` loads six entries standing for "earlier weeks". Everything after that is recorded live in the room.
 - **Mock shop.** `shop/data.json` is invented. `shopctl` is a command line over it, not a real back office. Approved actions change the file only; no real money moves and no technician is called.
 - **Approval is a policy, enforced by Switch.** `shopctl approve --by Owner` takes the approver as an argument, so on its own it can be spoofed by anything that can run the command. The real gate is the room: the agent that runs it only takes instructions from the owner (Switch addressing rules), and the room instructions forbid agents approving on each other's word. We say this plainly rather than call it secure.
-- **Scribe wire format.** Checked against Switch's "Agent protocol", "Agent connection" and "Agent events" docs pages (message envelope, `addressed`, `sender_name`/`body`, ping/pong with cursor, resume, `taken_over`). Control-frame shapes beyond the documented fields are accepted at the top level or under `data`. It has not been run against a live Switch server yet; `room/SETUP.md` step 6 is the first real test.
+- **Scribe wire format.** Checked against Switch's "Agent protocol", "Agent connection" and "Agent events" docs pages (message envelope, `addressed`, `sender_name`/`body`, ping/pong with cursor, resume, `taken_over`). Control-frame shapes beyond the documented fields are accepted at the top level or under `data`. It has now run against a live local Switch server (Switch Console 0.40, server 0.31): the scribe connects, answers staff, and the other agents address it. See "What happened live" below.
 - **Tests.** `pytest` (55 tests) covers the memory store, command parsing, the scribe's frame handling and a full connect/ping/reply/stop run against a local fake Switch server and the approval and refund rules. It does not test against a live Switch server.
 
 ## Run it
@@ -62,4 +62,8 @@ tests/
 
 ## Built with
 
-Switch (rooms, jobs, addressing, agent protocol), Claude Code / Codex as the room's agents, Python standard library + `httpx` + `websockets`. Written partly by voice with Wispr Flow *(delete this line if not true)*.
+Switch (rooms, jobs, addressing, agent protocol), Claude Code / Codex as the room's agents, Python standard library + `httpx` + `websockets`.
+
+## What happened live
+
+Run in a real Switch room on a local server. **Worked:** the triager read machine 3 through `shopctl` (E21, order O5001); the scribe recalled the earlier entries naming Ravi; the fixer staged a refund (P1, Rs 180) and left it unapplied; the owner approved and it applied, recorded under the owner account; `replace` and `blast` give the right chain (checked on the same memory outside the room). **Not shown live:** a different staff member being refused when they try to approve. In this room there is one account, which Switch treats as the owner. **Things that broke and how they were fixed:** agents ran in an empty folder with no `shopctl`; `python` does not exist on the test machine (only `python3`); the scribe answered plain-English questions from agents with its help text; and the local chat server stalls when the Mac is short of memory. The 60-second video (`docs/sunrise-room-60s.mp4`) is an edited replay of this run: messages are verbatim, long ones shortened. Rebuild it with `scripts/make_video.py` (needs Pillow and ffmpeg).

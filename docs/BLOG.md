@@ -55,7 +55,8 @@ I would rather you trust the three claims I make than be impressed by ten.
 - **The shop is pretend.** The data is invented, and "approving" changes a JSON file. No money moves, no technician is called.
 - **Approval is a policy, not a lock.** `shopctl approve --by Owner` takes the approver as an argument, so anything that can run the command could lie. The real gate is Switch: the agent that runs it only takes instructions from the owner, and the room's instructions tell agents never to approve on another agent's word. I say this in the README instead of calling it secure.
 - **The memory starts with six seeded entries**, standing in for "earlier weeks". Everything after that is recorded live in the room.
-- **Tests:** 55 pass, including the fake-server run. [LIVE-ROOM RESULT: replace with what happened in the real room: whether the scribe connected, whether agents could run `shopctl`, and whether Ravi was refused when he tried to approve. Delete this bracket if you cannot report it truthfully.]
+- **Tests:** 55 pass, including the fake-server run. Then I ran it in a real room, and it mostly worked. The triager read machine 3 through `shopctl`. The scribe recalled the earlier incident and named Ravi as the source. The fixer staged a Rs 180 refund and left it unapplied until the owner said yes. What I did not manage to show is a second staff member being refused: the room had a single account, which Switch treats as the owner.
+- **What broke live, honestly:** the agents started in an empty folder with no shop tool; the machine has `python3` but no `python`, so my instructions failed on the first try; the scribe answered an agent's plain-English question with its help text, so I taught it to search memory instead; and the bundled chat server stalled whenever the laptop ran low on memory. None of this showed up in 55 passing tests.
 
 ## Why Switch, specifically
 

@@ -13,7 +13,7 @@ The part I'm proudest of is the memory. I built a small agent called the scribe 
 I also got the connection code wrong four ways before reading the docs, and my own tests passed every one of them. The write-up covers that, and what is real versus pretend.
 
 Blog: [link]
-Code: [link]
+Code: https://github.com/PSKK-Git/sunrise-room
 
 #FlipTheSwitch #AIagents #SmallBusiness
 
@@ -24,7 +24,7 @@ Washer dies. Customer's bedsheets inside. Owner's at a wedding.
 I built a Switch room where AI agents prep the refund but only the owner can approve it, plus a memory agent that never overwrites, only supersedes.
 
 Blog: [link]
-Code: [link]
+Code: https://github.com/PSKK-Git/sunrise-room
 
 ## Optional thread follow-up
 
