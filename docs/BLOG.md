@@ -1,50 +1,78 @@
-# A laundromat, three AI agents, and a memory that never overwrites
+# The washing machine ate a customer's bedsheets, and the owner was at a wedding
 
-*Draft for the Flip the Switch hackathon (Best Blog). Fill the bracketed parts after the room has run live.*
+*Flip the Switch hackathon, Best Blog entry. Project: Sunrise Room.*
 
-A washer dies with a customer's bedsheets inside. The counter staff are standing in front of an annoyed customer. The owner is not there. Three things have to happen: someone works out what is wrong, someone decides whether to refund, and someone remembers what happened the last time.
+It is 4:40 on a Saturday. A washer in a small laundromat has died with somebody's bedsheets inside. The customer is standing at the counter, polite and getting less polite. The counter staff, Meena, has two questions she cannot answer: *is this machine known to be dodgy?* and *am I allowed to refund this?*
 
-Today that lives in WhatsApp threads and in the owner's head. I wanted to see whether one Switch room could hold all of it: staff post in chat, AI agents investigate, **nothing that costs money happens until the owner says yes**, and a memory agent remembers every decision so the next incident starts from what the shop already knows.
+The owner is at a cousin's wedding. So Meena does what every small shop does. She types into WhatsApp, waits, and hopes.
 
-## What I built
+I have watched this exact scene in shops my family goes to. Nothing in it is hard. What is missing is one place where the people, the facts and the permission all sit together. And, quietly, a memory. Somebody refunded this same customer last month. Somebody decided regulars get a refund straight away. That "somebody" is usually the owner's head.
 
-- **A Switch room** for a mock shop, "Sunrise Laundromat", with three jobs: `@triager` (shared), `@fixer` (exclusive, so two agents never refund twice) and `@reviewer` (shared).
-- **`shopctl`**, a small command line over an invented back office. Reading is free. Refunds, repairs and reorders can only be *staged*; they run when the owner approves.
-- **The scribe**, a custom agent I wrote against Switch's agent protocol. It is a small SQLite ledger with three ideas:
-  - every entry records **who** said it and **which message** it came from;
-  - nothing is overwritten. `replace #4: ...` ends the old rule and links it to the new one, and the old one stays on record;
-  - `blast #3` lists everything built on a rule, so when the owner changes it the room sees what to re-check.
+So for this hackathon I tried to put the whole thing in one Switch room.
 
-## What surprised me
+## What it does
 
-**The docs were better than my guesses, and my guesses were wrong.** I wrote the first version of the scribe's connection code before I could read the "Agent connection" and "Agent events" pages. When I read them, my code had four problems that would each have stopped it working, and my tests did not catch any of them, because I had written the tests against the same guesses:
+Staff post in the room like they would in a group chat. Three AI agents take the jobs nobody has time for:
 
-1. I looked for `addressed` and the message text one level too high in the frame. The real message is `{"event":"message","data":{"payload":{"addressed", "sender_name", "body"}}}`, so the scribe would have ignored every message.
-2. A pong has to carry the highest sequence number you have processed. Pings carry no cursor, so mine would have answered `null` forever.
-3. A default connection that claims no room delivers nothing, even though the socket stays open and answers pings. That is a very quiet way to fail.
+- **`@triager`** works out what is wrong and whether it has happened before.
+- **`@fixer`** prepares the refund, the repair call or the reorder. It is an *exclusive* job, so two agents can never both refund the same person.
+- **`@reviewer`** checks the plan before it goes to the owner.
+
+One rule sits above all of it: **nothing that costs money happens until the owner says yes.** The agents stage a refund. They cannot complete it.
+
+And there is a fourth member of the room, the one I actually built: **the scribe**.
+
+## The scribe: a memory that doesn't lie about the past
+
+Most "AI memory" is a pile of notes the model rereads. That breaks the first time a rule changes. Say the shop's rule was "regulars get refunds up to Rs 300", and last week the owner changed it to Rs 200. If you overwrite the note, you can no longer explain why Tuesday's refund was Rs 300. If you keep both, the AI might quote either.
+
+The scribe does what an accountant would do. **It never erases. It supersedes.**
+
+- Every entry records *who* said it and *which message* it came from. If it is wrong, you can see whose word it was.
+- `replace #4: ...` ends the old rule on that date and points it at the new one. The old rule stays on record, marked as no longer current.
+- `blast #3` answers a question owners actually have: *"If I change this rule, what else did we decide because of it?"* It lists everything built on top.
+- Asking "what's true now?" returns only current entries. Asking "what did we believe last Tuesday?" is possible too.
+
+The idea is not mine. The agent-memory research community landed on it independently: Zep's Graphiti marks a fact as invalid when something newer contradicts it, instead of deleting it ([Thoughtworks Radar](https://www.thoughtworks.com/radar/platforms/graphiti), [a summary of the Zep paper](https://signals.aktagon.com/articles/2026/07/zep-a-temporal-knowledge-graph-architecture-for-agent-memory/)). I borrowed the principle and shrank it to one SQLite file, because a laundromat does not run a graph database. I have not benchmarked it against anything and I won't pretend it beats those systems. It is small, it is legible, and you can read the whole ledger with your eyes.
+
+## Where I got it wrong first
+
+I wrote the scribe's connection code before I had read the "Agent connection" and "Agent events" pages. When I finally read them, I found four bugs, each of which would have stopped it working, and **my own tests had passed all four**, because I wrote the tests against the same wrong guesses.
+
+1. I looked for the message text one level too high in the frame. The scribe would have sat in the room ignoring every message.
+2. A pong has to carry the highest sequence number you have processed. Mine would have answered `null` forever.
+3. A connection that claims no rooms receives nothing, yet the socket stays open and keeps answering pings. A very quiet way to fail.
 4. After a `taken_over` eviction you must not reconnect. My retry loop would have fought a second copy of itself.
 
-The fix for the testing problem was to write a fake Switch server that follows the documented protocol and run the real client loop against it. That test now checks the auth header, the URL, the cursor in each pong, the reply post, and the stop on `taken_over`.
+Lesson: a test written from your own assumptions only proves your assumptions agree with each other. So I built a small fake Switch server that follows the documented protocol, and ran the real client loop against it. It checks the auth header, the URL, the cursor in each pong, the reply, and the stop on `taken_over`.
 
-**The approval gate is a policy, not a lock.** `shopctl approve --by Owner` takes the approver as an argument, so on its own it can be spoofed by anything that can run the command. The real gate is Switch: the agent that runs it only takes instructions from the owner (addressing rules), and the room instructions forbid agents approving on each other's word. I say so in the README rather than call it secure.
+A second, smaller catch: two staged refunds on one order could together exceed what the customer paid. Money bugs are the kind that make an owner stop trusting a tool, so `shopctl` now counts refunded plus pending per order.
 
-**Refund arithmetic needed a guard.** Two staged refunds on one order could together exceed what the customer paid. `shopctl` now tracks refunded plus waiting money per order.
+## The honest part
 
-## What is real and what is not
+I would rather you trust the three claims I make than be impressed by ten.
 
-- The shop data is invented, and approved actions only change a JSON file. No money moves.
-- The memory starts with six seeded entries standing for "earlier weeks". Everything after is recorded live.
-- 55 tests pass, including the fake-server run. [Replace with: what happened in the live room, once it has run.]
-- [Replace with: whether the room's agents could run `shopctl` from the repo folder, and whether Ravi really was refused when he tried to approve. These were the two riskiest assumptions.]
+- **The shop is pretend.** The data is invented, and "approving" changes a JSON file. No money moves, no technician is called.
+- **Approval is a policy, not a lock.** `shopctl approve --by Owner` takes the approver as an argument, so anything that can run the command could lie. The real gate is Switch: the agent that runs it only takes instructions from the owner, and the room's instructions tell agents never to approve on another agent's word. I say this in the README instead of calling it secure.
+- **The memory starts with six seeded entries**, standing in for "earlier weeks". Everything after that is recorded live in the room.
+- **Tests:** 55 pass, including the fake-server run. [LIVE-ROOM RESULT: replace with what happened in the real room: whether the scribe connected, whether agents could run `shopctl`, and whether Ravi was refused when he tried to approve. Delete this bracket if you cannot report it truthfully.]
+
+## Why Switch, specifically
+
+Take Switch away and this project falls over. There is no shared room where a customer problem lives with its history. There are no jobs, so I could not say "exclusive" and let the platform guarantee one refund. And there is no agent protocol, so the scribe would be a script on my laptop and not a member of the team the other agents can address. The room, the jobs, the addressing rules and the protocol are the product. My code is the shop-specific part on top.
 
 ## Try it
 
 ```bash
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-pytest
-./scripts/reset_demo.sh
-python -m scribe.cli Ravi
+pytest                      # 55 tests, no network
+./scripts/reset_demo.sh     # fresh shop and seeded memory
+python -m scribe.cli Ravi   # talk to the scribe from a terminal
 ```
 
-Setup for the room itself is in `room/SETUP.md`.
+Room setup is in `room/SETUP.md`.
+
+---
+
+*What I'd build next:* a Telegram bridge so Meena never has to open anything new, and an owner digest each evening: "three rules changed today, two decisions rest on them." The memory is the part I'd keep. The agents are replaceable. The shop's own history is the one thing that is not.
